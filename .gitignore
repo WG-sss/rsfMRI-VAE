@@ -1,0 +1,7 @@
+*.pyc
+*DS_Store
+./data/
+./demo/data
+*.nii
+*.tar
+*.h5
