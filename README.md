@@ -6,7 +6,7 @@ This repository is the official Pytorch implementation of '[Representation Learn
 This code is developed and tested with 
 
 ```
-Python 2.7.17
+Python 3.7.17
 Pytorch 1.2.0
 ```
 
