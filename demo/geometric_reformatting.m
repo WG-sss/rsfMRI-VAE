@@ -65,14 +65,15 @@ voxel_all = true(length(voxel_valid),1);
 % but do for all the voxels (with/wihout nan values)
 [L_az, L_el, R_az, R_el] = Dimension_Reduction_Surface(voxel_all,lb,rb); 
 
-% transform angles and create grid (for daaota with nan values)
+% transform angles and create grid (for data with nan values)
 [T_L_az, T_L_el, T_R_az, T_R_el, X, Y] = Create_Grid(im_size, L_az, L_el, R_az, R_el);
 
 % generate L/R masks for im_size x im_size grid
 [Regular_Grid_Left_Mask, Regular_Grid_Right_Mask] = Mask_Generation(im_size, Left_Mask, Right_Mask, T_L_az, T_L_el, T_R_az, T_R_el, X, Y);
 
 % save the masks for the im_size x im_size grid
-save('./result/MSE_Mask_demean.mat','Regular_Grid_Left_Mask','Regular_Grid_Right_Mask');
+% save('./result/MSE_Mask_demean.mat','Regular_Grid_Left_Mask','Regular_Grid_Right_Mask');
+save('./result/MSE_Mask.mat','Regular_Grid_Left_Mask','Regular_Grid_Right_Mask');
 
 %% grid mapping
 % transform angles and create grid (for data without nan values)
@@ -81,18 +82,22 @@ save('./result/MSE_Mask_demean.mat','Regular_Grid_Left_Mask','Regular_Grid_Right
 % generate map for voxel data to 2D grid and its inverse map for L hemi
 % save the grid mapping and inverse grid mapping for L hemi
 [grid_mapping, inverse_transformation, transformed_gridmap_L, Loss_Rate_L] = Geometric_Reformatting_fMRI2Grid_NN(im_size, T_L_az_nonan, T_L_el_nonan, X,Y, Sample_Data_no_nan_Left);
-save(['./result/Left_fMRI2Grid_',num2str(im_size),'_by_',num2str(im_size),'_NN_rest2.mat'],'grid_mapping','inverse_transformation')
+% save(['./result/Left_fMRI2Grid_',num2str(im_size),'_by_',num2str(im_size),'_NN_rest2.mat'],'grid_mapping','inverse_transformation')
+save(['./result/Left_fMRI2Grid_',num2str(im_size),'_by_',num2str(im_size),'_NN.mat'],'grid_mapping','inverse_transformation')
 
 % generate map for voxel data to 2D grid and its inverse map for R hemi
 % save the grid mapping and inverse grid mapping for R hemi
 [grid_mapping, inverse_transformation, transformed_gridmap_R, Loss_Rate_R] = Geometric_Reformatting_fMRI2Grid_NN(im_size, T_R_az_nonan, T_R_el_nonan, X,Y, Sample_Data_no_nan_Right);
-save(['./result/Right_fMRI2Grid_',num2str(im_size),'_by_',num2str(im_size),'_NN_rest2.mat'],'grid_mapping','inverse_transformation')
+
+% save(['./result/Right_fMRI2Grid_',num2str(im_size),'_by_',num2str(im_size),'_NN_rest2.mat'],'grid_mapping','inverse_transformation')
+save(['./result/Right_fMRI2Grid_',num2str(im_size),'_by_',num2str(im_size),'_NN.mat'],'grid_mapping','inverse_transformation')
 
 %% visualization
 % for visualization, plot the data for the first time point for L
 figure;
 title('2D image of cortical pattern (L)');
 imagesc(reshape(transformed_gridmap_L,im_size,im_size))
+
 % 使用自定义调色板
 colormap(slanCM('coolwarm'));
 disp(['Loss rate of reformatting and inverse-reformatting procedures (L) is ',num2str(Loss_Rate_L),'%'])

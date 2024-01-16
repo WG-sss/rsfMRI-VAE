@@ -15,7 +15,6 @@ parser.add_argument('--seed', type=int, default=1, metavar='S',
 parser.add_argument('--zdim', type=int, default=256, metavar='N',
                             help='dimension of latent variables')
 parser.add_argument('--data-path', default='./data/demo_data', type=str, metavar='DIR', help='path to dataset')
-  
 parser.add_argument('--z-path', type=str, default='./result/demo_latent/', help='path to saved z files')
 parser.add_argument('--resume', type=str, default='./checkpoint/checkpoint.pth.tar', help='the VAE checkpoint') 
 parser.add_argument('--img-path', type=str, default='./result/recon', help='path to save reconstructed images')

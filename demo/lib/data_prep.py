@@ -21,9 +21,8 @@ def GenerateData(args, left_trans_mat, right_trans_mat):
     fmri_file = os.path.join(args.fmri_path , 'fMRI.mat')
     fmri_data = sio.loadmat(fmri_file)['Normalized_fMRI']
     left_data = fmri_data[0:29696,:]
-    right_data = fmri_data[29696:59412,:] # right has 29716 data pointr, but left has 29696
-    print("Loading data the size of the left hemisphere is {0};\
-          the size of the right hemisphere is {1}".format(left_data.shape, right_data.shape))
+    right_data = fmri_data[29696:59412,:]
+    print(f'Loading data the size of the left hemisphere is {left_data.shape}; the size of the right hemisphere is {right_data.shape}')
     # left
     LeftSurfData = np.expand_dims(left_trans_mat.dot(left_data).T.reshape((-1,args.img_size,  args.img_size)), axis=1)
     print(LeftSurfData.shape)
@@ -59,9 +58,9 @@ if __name__ == "__main__":
     
     # Loading transformation data
     left_trans_mat = sio.loadmat(os.path.join(args.trans_path,'Left_fMRI2Grid_192_by_192_NN.mat'))['grid_mapping']
-    print('The shape of the loaded left-transoformation file is: {}'.format(left_trans_mat.shape))
+    print(f'The shape of the loaded left-transoformation file is: {left_trans_mat.shape}')
     right_trans_mat = sio.loadmat(os.path.join(args.trans_path,'Right_fMRI2Grid_192_by_192_NN.mat'))['grid_mapping']
-    print('The shape of the loaded right-transoformation file is: {}'.format(right_trans_mat.shape))
+    print(f'The shape of the loaded right-transoformation file is: {right_trans_mat.shape}')
     
     # Loading Brain Mask
     LeftMask = sio.loadmat(os.path.join(args.trans_path,'MSE_Mask.mat'))['Regular_Grid_Left_Mask']

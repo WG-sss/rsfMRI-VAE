@@ -4,12 +4,16 @@
 %% Configuration
 addpath('./lib');
 addpath('./CIFTI_read_save');
+
 % cii_input_filepath = './data/rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean.dtseries.nii';
 % cii_output_filepath = './data/rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean_preprocessed';
 
 % test
-cii_input_filepath = './data/100408_rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean.dtseries.nii';
-cii_output_filepath = './data/100408_rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean_preprocessed';
+% cii_input_filepath = './data/100408_rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean.dtseries.nii';
+% cii_output_filepath = './data/100408_rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean_preprocessed';
+
+cii_input_filepath = './data/rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean.dtseries.nii';
+cii_output_filepath = './data/rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean_preprocessed';
 
 %% Preprocess
 % sampling frequency of HCP fMRI data
