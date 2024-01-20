@@ -1,0 +1,80 @@
+#!/bin/bash
+###--------------------------------------------------------------------------------------
+###	Created on: 8 Oct. 2022 14:30:14 UTC/GMT +8.00 (Beijing)
+###   	Author: Changbo Zhu
+###   	E-mail: 1207146285@qq.com
+###     Last update: 30th Dec. 2023
+###
+###---------------------------------------------------------------------------------------
+###
+## using module to load environmental variables                               
+#module use $HOME/opt/modulefiles
+#module load cuda/11.2 anaconda3 cudnn/8.1.0.77 TensorRT
+module load MATLAB/R2019b
+# module load anaconda3
+
+
+### Compute NUM_THREADS for OMP  and  MKL
+NUM_THREADS_PER_CORE=0
+HOST_NAME=$(hostname)
+
+echo $HOST_NAME
+
+if [ $HOST_NAME = "node01" ] || [ $HOST_NAME = "node02" ] || [ $HOST_NAME = "node03" ] || [ $HOST_NAME = "node04" ] || [ $HOST_NAME = "node05" ]; then
+   NUM_THREADS_PER_CORE=1
+elif [ $HOST_NAME = "node06" ] || [ $HOST_NAME = "node07" ];then
+   NUM_THREADS_PER_CORE=2
+else
+   NUM_THREADS_PER_CORE=1
+fi
+
+#NUM_THREADS_PER_CORE=1
+NTASKS_PER_NODE=$SLURM_NTASKS_PER_NODE
+NUM_THREADS_PER_NODE=$[NTASKS_PER_NODE/NUM_THREADS_PER_CORE]
+### export environmental variables used by MKL and OpenMP
+### MATLAB and Python must specify these variables
+export MKL_NUM_THREADS=${NUM_THREADS_PER_NODE}
+export MKL_DOMAIN_NUM_THREADS="MKL_BLAS="${NUM_THREADS_PER_NODE}
+export OPENBLAS_NUM_THREADS=${NUM_THREADS_PER_NODE}
+export VECLIB_MAXIMUM_THREADS=${NUM_THREADS_PER_NODE}
+export NUMEXPR_NUM_THREADS=${NUM_THREADS_PER_NODE}
+export OMP_NUM_THREADS=${NUM_THREADS_PER_NODE}
+export MKL_DYNAMIC="FALSE"
+export OMP_DYNAMIC="FALSE"
+export TF_ENABLE_ONEDNN_OPTS=0
+
+###-------- show infomation
+echo "-------------------Shell scripts provided by Changbo Zhu (2022.10)------------------------"
+echo '--Submitting job to computing cluster on '$SLURM_SUBMIT_HOST
+echo '--Time is '`date`
+echo '--Directory is '$PWD
+echo '--This job runs on the computing nodes:' $SLURM_JOB_NODELIST
+echo '--This job has allocated the number of logic CPU core per node: '$SLURM_NTASKS_PER_NODE
+echo '--Environmental Variables: '
+module list
+echo 'MKL_NUM_THREADS='$MKL_NUM_THREADS';OMP_NUM_THREADS='$OMP_NUM_THREADS';MKL_DYNAMIC='$MKL_DYNAMIC';OMP_DYNAMIC='$OMP_DYNAMIC
+
+
+### Pause
+sleep ${SLEEP_TIME}s
+
+### Change into working directory
+cd ${WORKDIR}
+
+# ------------------------------- For MATLAB Program -----------------------------------------------
+###excuting matlab program
+# mainfun=simMAB_main
+echo 'use the paramter to start matlab program with main function: '$mainfunc
+matlab -nodesktop -nosplash -nodisplay -r "preprocess; exit" 
+
+# ------------------------------- For Python Program -----------------------------------------------
+###excuting python program
+# echo 'use the paramter to start python program'
+
+# python data_download.py #--RES_DIR ${RES_DIR} --DATA_LOC ${DATA_LOC} --para ${para}
+
+# conda deactivate
+#### end
+echo "Job finished at "
+date
+hostname
