@@ -1,4 +1,4 @@
-function preprocessed_fMRI(cii_input_filepath)
+function preprocess_fMRI(cii_input_filepath)
   % preprocess fMRI data for the VAE
   % para: 
   %   -cii_input_filepath: the raw fMRI data path
@@ -16,7 +16,7 @@ function preprocessed_fMRI(cii_input_filepath)
       % Remove the '.dtseries.nii' suffix
       base_path = erase(cii_input_filepath, '.dtseries.nii');
       % Append 'preprocessed' to the base path
-      cii_output_filepath = [base_path, '_preprocessed']
+      cii_output_filepath = [base_path, '_preprocessed'];
   else
       error('Input path does not end with ''.dtseries.nii''');
   end

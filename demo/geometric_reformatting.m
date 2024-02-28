@@ -6,6 +6,9 @@ function geometric_reformatting(Preprocessed_fMRI_filepath)
 
   % TODO: merge ID and run information
   %% Configurations
+  addpath('./lib');
+  addpath('./CIFTI_read_save');
+  
   % set the size of the output image
   im_size = 192;
 
@@ -63,90 +66,76 @@ function geometric_reformatting(Preprocessed_fMRI_filepath)
 
   % -----------------------------------------------------------------------------------
   % -------------------------- sample a data from fMRI --------------------------------
-  % ------------------------ for single time point data -------------------------------
+  % -------------------- as a template for the dimensional info  ----------------------
   % extract the first time point from fMRI
-  saved_data = {};
-  for p = 1:1200:1200
-    Sample_Data = fMRI(:,p);
-    Sample_Data_Left = Left_fMRI(:,p);
-    Sample_Data_Right = Right_fMRI(:,p);
-
-    %% get voxels in 59412 space
-    % create logical vector corresponding to which voxels have nan value
-    % voxels with nan value are not valid values
-    voxel_valid = ~isnan(Sample_Data);
-    voxel_valid_L = ~isnan(Sample_Data_Left);
-    voxel_valid_R = ~isnan(Sample_Data_Right);
-
-    % remove nan values from the sample data
-    Sample_Data_no_nan_Left = Sample_Data_Left(voxel_valid_L);
-    Sample_Data_no_nan_Right = Sample_Data_Right(voxel_valid_R);
-
-    % ---------------------------- Transform nii data to grid form --------------------------
-    % calculate the azimuth and elevation coordinates for each voxel
-    % do only for the valid voxels with non-nan values
-    [L_az_nonan, L_el_nonan, R_az_nonan, R_el_nonan] = Dimension_Reduction_Surface(voxel_valid,lb,rb); 
-
-    %% Mask generation
-    % initialize mask vectors for left/right cortex
-    Left_Mask = ones(length(Sample_Data_Left),1);
-    Right_Mask = ones(length(Sample_Data_Right),1);
-    % input a zero in rows that correspond to voxels with nan value
-    Left_Mask(isnan(Sample_Data_Left))=0;
-    Right_Mask(isnan(Sample_Data_Right))=0;
-
-    % create a vector of ones to pass into Dimension_Reduction_Surface
-    voxel_all = true(length(voxel_valid),1);
-
-    % same calculation of azimuth and elevation coordinates for each voxel
-    % but do for all the voxels (with/wihout nan values)
-    [L_az, L_el, R_az, R_el] = Dimension_Reduction_Surface(voxel_all,lb,rb); 
-
-    % transform angles and create grid (for data with nan values)
-    [T_L_az, T_L_el, T_R_az, T_R_el, X, Y] = Create_Grid(im_size, L_az, L_el, R_az, R_el);
-
-    % generate L/R masks for im_size x im_size grid
-    [Regular_Grid_Left_Mask, Regular_Grid_Right_Mask] = Mask_Generation(im_size, Left_Mask, Right_Mask, T_L_az, T_L_el, T_R_az, T_R_el, X, Y);
-
-    % save the masks for the im_size x im_size grid
-    % save('./result/MSE_Mask_demean.mat','Regular_Grid_Left_Mask','Regular_Grid_Right_Mask');
-    saved_data.(['Timepoint' num2str(p)]).MSE_MASK = {Regular_Grid_Left_Mask, Regular_Grid_Right_Mask}; 
-    % save([resultDirPath '/MSE_Mask.mat'],'Regular_Grid_Left_Mask','Regular_Grid_Right_Mask');
-
-    %% grid mapping
-    % transform angles and create grid (for data without nan values)
-    [T_L_az_nonan, T_L_el_nonan, T_R_az_nonan, T_R_el_nonan, X, Y] = Create_Grid(im_size, L_az_nonan, L_el_nonan, R_az_nonan, R_el_nonan);
-
-    % generate map for voxel data to 2D grid and its inverse map for L hemi
-    % save the grid mapping and inverse grid mapping for L hemi
-    [grid_mapping, inverse_transformation, transformed_gridmap_L, Loss_Rate_L] = Geometric_Reformatting_fMRI2Grid_NN(im_size, T_L_az_nonan, T_L_el_nonan, X,Y, Sample_Data_no_nan_Left);
-    saved_data.(['Timepoint' num2str(p)]).(['Left_fMRI2Grid_',num2str(im_size),'_by_',num2str(im_size)]) = ...
-      {grid_mapping, inverse_transformation, transformed_gridmap_L, Loss_Rate_L};
-    % save([resultDirPath '/Left_fMRI2Grid_',num2str(im_size),'_by_',num2str(im_size),'_NN.mat'],'grid_mapping','inverse_transformation')
-
-    % generate map for voxel data to 2D grid and its inverse map for R hemi
-    % save the grid mapping and inverse grid mapping for R hemi
-    [grid_mapping, inverse_transformation, transformed_gridmap_R, Loss_Rate_R] = Geometric_Reformatting_fMRI2Grid_NN(im_size, T_R_az_nonan, T_R_el_nonan, X,Y, Sample_Data_no_nan_Right);
-    saved_data.(['Timepoint' num2str(p)]).(['Right_fMRI2Grid_',num2str(im_size),'_by_',num2str(im_size)]) = ...
-      {grid_mapping, inverse_transformation, transformed_gridmap_R, Loss_Rate_R};
-    % save([resultDirPath '/Right_fMRI2Grid_',num2str(im_size),'_by_',num2str(im_size),'_NN.mat'],'grid_mapping','inverse_transformation')
-
-  end
-
-  save([resultDirPath  '/info_data.mat']   , '-struct', 'saved_data');
-
-  % -----------------------------------------------------------------------------------
-  % ---------------------------- save some useful information -----------------------------
-  %% save Normalized_fMRI as a mat file
   Sample_Data = fMRI(:,1);
+  Sample_Data_Left = Left_fMRI(:,1);
+  Sample_Data_Right = Right_fMRI(:,1);
 
   %% get voxels in 59412 space
   % create logical vector corresponding to which voxels have nan value
   % voxels with nan value are not valid values
   voxel_valid = ~isnan(Sample_Data);
+  voxel_valid_L = ~isnan(Sample_Data_Left);
+  voxel_valid_R = ~isnan(Sample_Data_Right);
+
+  % remove nan values from the sample data
+  % Sample_Data_no_nan = Sample_Data(voxel_valid);
+  Sample_Data_no_nan_Left = Sample_Data_Left(voxel_valid_L);
+  Sample_Data_no_nan_Right = Sample_Data_Right(voxel_valid_R);
+
+  % ---------------------------- save some useful information -----------------------------
+  %% save Normalized_fMRI as a mat file
   Normalized_fMRI = fMRI(voxel_valid,:);
   save([resultDirPath '/fMRI.mat'], 'Normalized_fMRI');
-  % -----------------------------------------------------------------------------------
+  % ---------------------------------------------------------------------------------------
+
+
+  % ---------------------------- Transform nii data to grid form --------------------------
+  % calculate the azimuth and elevation coordinates for each voxel
+  % do only for the valid voxels with non-nan values
+  [L_az_nonan, L_el_nonan, R_az_nonan, R_el_nonan] = Dimension_Reduction_Surface(voxel_valid,lb,rb); 
+
+  %% Mask generation
+  % initialize mask vectors for left/right cortex
+  Left_Mask = ones(length(Sample_Data_Left),1);
+  Right_Mask = ones(length(Sample_Data_Right),1);
+  % input a zero in rows that correspond to voxels with nan value
+  Left_Mask(isnan(Sample_Data_Left))=0;
+  Right_Mask(isnan(Sample_Data_Right))=0;
+
+  % create a vector of ones to pass into Dimension_Reduction_Surface
+  voxel_all = true(length(voxel_valid),1);
+
+  % same calculation of azimuth and elevation coordinates for each voxel
+  % but do for all the voxels (with/wihout nan values)
+  [L_az, L_el, R_az, R_el] = Dimension_Reduction_Surface(voxel_all,lb,rb); 
+
+  % transform angles and create grid (for data with nan values)
+  [T_L_az, T_L_el, T_R_az, T_R_el, X, Y] = Create_Grid(im_size, L_az, L_el, R_az, R_el);
+
+  % generate L/R masks for im_size x im_size grid
+  [Regular_Grid_Left_Mask, Regular_Grid_Right_Mask] = Mask_Generation(im_size, Left_Mask, Right_Mask, T_L_az, T_L_el, T_R_az, T_R_el, X, Y);
+
+  % save the masks for the im_size x im_size grid
+  save([resultDirPath '/MSE_Mask.mat'],'Regular_Grid_Left_Mask','Regular_Grid_Right_Mask');
+
+  %% grid mapping
+  % transform angles and create grid (for data without nan values)
+  [T_L_az_nonan, T_L_el_nonan, T_R_az_nonan, T_R_el_nonan, X, Y] = Create_Grid(im_size, L_az_nonan, L_el_nonan, R_az_nonan, R_el_nonan);
+
+  % generate map for voxel data to 2D grid and its inverse map for L hemi
+  % save the grid mapping and inverse grid mapping for L hemi
+  [grid_mapping, inverse_transformation, ~, ~] = Geometric_Reformatting_fMRI2Grid_NN(im_size, T_L_az_nonan, T_L_el_nonan, X,Y, Sample_Data_no_nan_Left);
+  save([resultDirPath '/Left_fMRI2Grid_',num2str(im_size),'_by_',num2str(im_size),'_NN.mat'],'grid_mapping','inverse_transformation')
+
+  % generate map for voxel data to 2D grid and its inverse map for R hemi
+  % save the grid mapping and inverse grid mapping for R hemi
+  [grid_mapping, inverse_transformation, ~, ~] = Geometric_Reformatting_fMRI2Grid_NN(im_size, T_R_az_nonan, T_R_el_nonan, X,Y, Sample_Data_no_nan_Right);
+  save([resultDirPath '/Right_fMRI2Grid_',num2str(im_size),'_by_',num2str(im_size),'_NN.mat'],'grid_mapping','inverse_transformation')
+
+
+  % ---------------------------------------------------------------------------------------
 
   % ---------------------------------------------------------------------------------------
 
@@ -176,5 +165,5 @@ function geometric_reformatting(Preprocessed_fMRI_filepath)
   %% generate hdf5 format for Pytorch dataloader
   % data_prep.py driver
   % for remote server
-  system('python ./lib/data_prep.py --fmri-path resultDirPath --trans-path resultDirPath --output-path resultDirPath');
+  system(['/opt/homebrew/Caskroom/miniconda/base/envs/rsfMRI-VAE/bin/python ./lib/data_prep.py --fmri-path ' resultDirPath ' --trans-path ' resultDirPath ' --output-path ' resultDirPath]);
 end
