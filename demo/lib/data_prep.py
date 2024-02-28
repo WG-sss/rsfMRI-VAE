@@ -69,9 +69,9 @@ if __name__ == "__main__":
     print(f'The shape of the loaded right-transoformation file is: {right_trans_mat.shape}')
 
     # Loading Brain Mask
-    # Loading Regular_Grid_Left_Mask
+    # Loading Regular_Grid_Left_Mask (192, 192)
     left_mask  = sio.loadmat(os.path.join(args.trans_path,'MSE_Mask.mat'))['Regular_Grid_Left_Mask']
-    # Loading Regular_Grid_Right_Mask
+    # Loading Regular_Grid_Right_Mask (192, 192)
     right_mask = sio.loadmat(os.path.join(args.trans_path,'MSE_Mask.mat'))['Regular_Grid_Right_Mask']
 
     # Generate the Left and Right Data
