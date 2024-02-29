@@ -81,6 +81,9 @@ def load_data_paths(data_paths='./split_dataset_paths.csv'):
             val_dirs.append(row['valid'])
             test_dirs.append(row['test'])
 
+    val_dirs = [val_dir for val_dir in val_dirs if val_dir != '']
+    test_dirs = [test_dir for test_dir in test_dirs if test_dir != '']
+
     return train_dirs, val_dirs, test_dirs
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -324,7 +327,7 @@ def save_checkpoint(state, filename):
 
 if __name__ == "__main__":
     train_dirs, val_dirs, test_dirs = load_data_paths()
-    test(0)
+    test(0, val_dirs)
     for epoch in range(start_epoch + 1, args.epochs):
         train(epoch, train_dirs)
         test(epoch, val_dirs)
