@@ -12,15 +12,17 @@ from torch.nn import functional as F
 import os
 import scipy.io as sio
 import torch.optim as optim
+import csv
 
+# >>>>>>>>>>>>>>>>>>>>>>>> parse argument >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 parser = argparse.ArgumentParser(description='VAE for fMRI data')
 parser.add_argument('--batch-size', type=int, default=128, metavar='N',
                     help='input batch size for training (default: 128)')
-parser.add_argument('--epochs', type=int, default=100, metavar='N',
+parser.add_argument('--epochs', type=int, default=30, metavar='N',
                     help='number of epochs to train (default: 100)')
 parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
-parser.add_argument('--log-interval', type=int, default=10, metavar='N',
+parser.add_argument('--log-interval', type=int, default=5, metavar='N',
                     help='how many batches to wait before logging training status')
 parser.add_argument('--zdim', type=int, default=256, metavar='N',
                     help='dimension of latent variables (default: 256)')
@@ -40,9 +42,9 @@ parser.add_argument('--apply-mask', default=True, type=bool,
                     help='Whether apply a mask of the crtical surface to the MSe loss function')
 parser.add_argument('--Output-path', default='./demo/Output_Temp/', type=str,
                     help='Path to save results')
-parser.add_argument('--mother-path', default='./demo/test/', type=str,
+parser.add_argument('--mother-path', default='./', type=str,
                     help='Path to mother folder')
-
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 def save_image_mat(img_r, img_l, result_path):
     save_data = {}
@@ -56,14 +58,33 @@ def save_image_mat(img_r, img_l, result_path):
     print('image saved as mat')
 
 
-# initialization
+# >>>>>>>>>>>>>>>>>>>>>>>> initialization >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 args = parser.parse_args()
 start_epoch = 0
 torch.manual_seed(args.seed)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"the model is deployed on {device}")
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-# path
+# >>>>>>>>>>>>>>>>>>>>>>>> load splited paths >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+def load_data_paths(data_paths='./split_dataset_paths.csv'):
+
+    # 读取 CSV 文件
+    train_dirs = []
+    val_dirs = []
+    test_dirs = []
+
+    with open(data_paths, 'r', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            train_dirs.append(row['train'])
+            val_dirs.append(row['valid'])
+            test_dirs.append(row['test'])
+
+    return train_dirs, val_dirs, test_dirs
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+# >>>>>>>>>>>>>>>>>>>>>>>> relevant paths and files >>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 result_path = args.Output_path
 log_path = args.mother_path + '/Log/'
 checkpoint_path = args.mother_path + '/Checkpoint/'
@@ -85,27 +106,11 @@ stat_name = f'Zdim_{args.zdim}_Vae-beta_{args.vae_beta}_Lr_{args.lr}_Batch-size_
 while (os.path.isfile(log_path + stat_name + f'_Rep_{rep}.txt')):
     rep += 1
 log_name = log_path + stat_name + f'_Rep_{rep}.txt'
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-# dataloader
-kwargs = {'num_workers': 1, 'pin_memory': True} if torch.cuda.is_available() else {}
-train_dir = args.data_path + '/train_fMRI_data.h5'
-val_dir = args.data_path + '/val_fMRI_data.h5'
-train_set = H5Dataset(train_dir)
-val_set = H5Dataset(val_dir)
-train_loader = torch.utils.data.DataLoader(train_set, batch_size=args.batch_size, shuffle=True, **kwargs)
-val_loader = torch.utils.data.DataLoader(val_set, batch_size=args.batch_size, shuffle=False, **kwargs)
 
-# load the mask form the data loader
-if args.apply_mask:
-    print('Will apply a mask to the loss function')
-    left_mask = torch.from_numpy(val_set.LeftMask).to(device)
-    right_mask = torch.from_numpy(val_set.RightMask).to(device)
-else:
-    print('Will not apply a mask to the loss function')
-    left_mask = None
-    right_mask = None
 
-# model
+# >>>>>>>>>>>>>>>>>>>>>>>> init model and optimizer >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 model = BetaVAE(z_dim=args.zdim, nc=1).to(device)
 if torch.cuda.device_count() > 1:
     model = nn.DataParallel(model)
@@ -126,9 +131,10 @@ if args.resume:
               .format(args.resume, checkpoint['epoch']))
     else:
         print("=> no checkpoint found at '{}'".format(args.resume))
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-# loss function
+# >>>>>>>>>>>>>>>>>>>>>>>> loss function >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def loss_function(xL, xR, x_recon_L, x_recon_R, mu, logvar, beta, left_mask, right_mask):
     Image_Size = xL.size(3)
 
@@ -157,8 +163,9 @@ def loss_function(xL, xR, x_recon_L, x_recon_R, mu, logvar, beta, left_mask, rig
     KLD = -0.5 * (1 + logvar - mu.pow(2) - logvar.exp()).sum(1).mean()
 
     return KLD * beta + MSE_L + MSE_R
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-
+# >>>>>>>>>>>>>>>>>>>>>>>> train and test func >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def train_save_image_mat(img_r, img_l, recon_r, recon_l, loss, recon_loss, N_Epoch, result_path):
     save_data = {}
 
@@ -199,7 +206,7 @@ def test_save_image_mat(img_r, img_l, recon_r, recon_l, loss, recon_loss, N_Epoc
     print('test image saved as mat')
 
 
-def train(epoch):
+def _train(epoch, train_loader, left_mask, right_mask):
     model.train()
     train_loss = 0
     recon_loss = 0
@@ -227,7 +234,6 @@ def train(epoch):
                 f'KLD: {xL.size(3) ** 2 * (loss.item() - Recon_Error.item()) / (args.vae_beta * len(xL)):.6f}'
             )
 
-        # if batch_idx == 0:
 
         # train_save_image_mat(xR, xL,x_recon_R,x_recon_L,loss.item()/len(xL),Recon_Error.item()/len(xL),epoch,result_path)
 
@@ -238,12 +244,12 @@ def train(epoch):
     print('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / batch_idx))
 
 
-def test(epoch):
+def _test(epoch, test_loader, left_mask, right_mask):
     model.eval()
     test_loss = 0
     recon_loss = 0
     with torch.no_grad():
-        for i, (xL, xR) in enumerate(val_loader):
+        for i, (xL, xR) in enumerate(test_loader):
             xL = xL.to(device)
             xR = xR.to(device)
             x_recon_L, x_recon_R, mu, logvar = model(xL, xR)
@@ -266,16 +272,62 @@ def test(epoch):
     stat_file.write('Epoch:{} Average validation loss: {:.8f}'.format(epoch, test_loss))
     print('====> Test set loss: {:.4f}'.format(test_loss))
 
+def train(epoch, train_dirs):
+# >>>>>>>>>>>>>>>>>>>>>>>> dataloader >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    kwargs = {'num_workers': 1, 'pin_memory': True} if torch.cuda.is_available() else {}
+    for train_dir in train_dirs[:10]:
+
+        train_set = H5Dataset(train_dir)
+        train_loader = torch.utils.data.DataLoader(train_set, batch_size=args.batch_size, shuffle=True, **kwargs)
+        
+        # load the mask from the data loader 
+        if args.apply_mask:
+            print('Will apply a mask to the loss function')
+            left_mask = torch.from_numpy(train_set.LeftMask).to(device)
+            right_mask = torch.from_numpy(train_set.RightMask).to(device)
+        else:
+            print('Will not apply a mask to the loss function')
+            left_mask = None
+            right_mask = None
+
+        _train(epoch, train_loader, left_mask, right_mask)
+
+    print('train one time over all train subjects')
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+def test(epoch, test_dirs):
+# >>>>>>>>>>>>>>>>>>>>>>>> dataloader >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    kwargs = {'num_workers': 1, 'pin_memory': True} if torch.cuda.is_available() else {}
+    for test_dir in test_dirs[:2]:
+
+        test_set = H5Dataset(test_dir)
+        test_loader = torch.utils.data.DataLoader(test_set, batch_size=args.batch_size, shuffle=False, **kwargs)
+        
+        # load the mask from the data loader 
+        if args.apply_mask:
+            print('Will apply a mask to the loss function')
+            left_mask = torch.from_numpy(test_set.LeftMask).to(device)
+            right_mask = torch.from_numpy(test_set.RightMask).to(device)
+        else:
+            print('Will not apply a mask to the loss function')
+            left_mask = None
+            right_mask = None
+
+        _test(epoch, test_loader, left_mask, right_mask)
+    print('train one time over all test subjects')
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    
 
 def save_checkpoint(state, filename):
     torch.save(state, filename)
-
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 if __name__ == "__main__":
+    train_dirs, val_dirs, test_dirs = load_data_paths()
     test(0)
     for epoch in range(start_epoch + 1, args.epochs):
-        train(epoch)
-        test(epoch)
+        train(epoch, train_dirs)
+        test(epoch, val_dirs)
         if epoch % 10 == 0:
             save_checkpoint({
                 'epoch': epoch,
