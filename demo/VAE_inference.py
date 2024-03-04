@@ -71,7 +71,8 @@ for batch_idx, filename in enumerate(filelist):
     mu = z_dist[:, :args.zdim]
     logvar = z_dist[:, args.zdim:]
 
-    z = torch.tensor(mu).to(device)
-    x_recon_L, x_recon_R = model._decode(z)
-    save_image_mat(x_recon_R, x_recon_L, args.img_path, batch_idx)
-
+    # z = torch.tensor(mu).to(device)
+    z = model.reparametrize(mu, logvar)
+    z = torch.tensor(z).to(device)
+    x_recon_L, x_recon_R = model.decode(z)
+    save_image_mat(x_recon_L, x_recon_R, args.img_path, batch_idx)
