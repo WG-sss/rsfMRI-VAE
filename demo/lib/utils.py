@@ -25,7 +25,7 @@ class H5Dataset(data.Dataset):
         return self.LeftData.shape[0]
 
 
-def save_image_mat(img_r, img_l, result_path, idx):
+def save_image_mat(img_l, img_r, result_path, idx):
     save_data = {}
     save_data['recon_L'] = img_l.detach().cpu().numpy()
     save_data['recon_R'] = img_r.detach().cpu().numpy()
