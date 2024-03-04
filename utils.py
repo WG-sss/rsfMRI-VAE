@@ -23,11 +23,11 @@ class H5Dataset(data.Dataset):
 
 
 
-def save_image_mat(img_r, img_l, result_path, idx):
+def save_image_mat(img_l, img_r, result_path, idx):
     save_data = {}
     save_data['recon_L'] = img_l.detach().cpu().numpy()
     save_data['recon_R'] = img_r.detach().cpu().numpy()
-    sio.savemat(result_path+'img{}.mat'.format(idx), save_data)
+    sio.savemat(result_path+f'img{idx}.mat', save_data)
 
 def load_dataset(data_path, batch_size):
     kwargs = {'num_workers': 1, 'pin_memory': True} if torch.cuda.is_available() else {}
@@ -41,7 +41,6 @@ def load_dataset(data_path, batch_size):
 
 def load_dataset_test(data_path, batch_size):
     kwargs = {'num_workers': 1, 'pin_memory': True} if torch.cuda.is_available() else {}
-    test_dir = data_path + '.h5'
-    test_set = H5Dataset(test_dir)
+    test_set = H5Dataset(data_path)
     test_loader = torch.utils.data.DataLoader(test_set,batch_size=batch_size, shuffle=False, **kwargs)
     return test_loader
