@@ -336,5 +336,5 @@ if __name__ == "__main__":
                 'epoch': epoch,
                 'state_dict': model.state_dict(),
                 'optimizer': optimizer.state_dict()
-            }, checkpoint_path + '/checkpoint' + str(epoch) + '.pth.tar')
+            }, checkpoint_path + '/checkpoint' + str(epoch) + args.vae_beta + '.pth.tar')
         scheduler.step()
