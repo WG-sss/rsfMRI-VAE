@@ -17,7 +17,7 @@ function geometric_reformatting(Preprocessed_fMRI_filepath)
     fprintf('Error: The file %s does not exist.\n', Preprocessed_fMRI_filepath);
     return;
   end
-  
+  Preprocessed_fMRI_filepath = './data/100408_rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean_preprocessed.dtseries.nii';
   % there is no suffix, attention.
   % Preprocessed_fMRI_filepath = '~/Datasets/HCP_S1200/data/100307/100307_rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean_preprocessed';
   
