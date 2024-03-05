@@ -10,7 +10,7 @@ import scipy.io as sio
 
 class H5Dataset(data.Dataset):
     def __init__(self, H5Path):
-        super(H5Dataset, self).__init__()
+        super().__init__()
         self.H5File = h5py.File(H5Path, 'r')
         self.LeftData = self.H5File['LeftData']
         self.RightData = self.H5File['RightData']
@@ -23,6 +23,18 @@ class H5Dataset(data.Dataset):
 
     def __len__(self):
         return self.LeftData.shape[0]
+
+
+class MatDataset(data.Dataset):
+    def __init__(self, mat_data_path):
+        super().__init__()
+        self.z = sio.loadmat(mat_data_path)['z']
+
+    def __getitem__(self, index):
+        return torch.from_numpy(self.z[index, :]).float()
+
+    def __len__(self):
+        return self.z.shape[0]
 
 
 def save_image_mat(img_l, img_r, result_path, idx):
