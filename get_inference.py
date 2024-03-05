@@ -2,7 +2,9 @@ import torch
 import numpy as np
 import scipy.io as sio
 import argparse
-from utils import *
+
+from demo.lib.utils import *
+# from utils import *
 from fMRIVAE_Model import *
 import torch.utils.data
 from typing import Literal
@@ -51,21 +53,23 @@ def get_inference(batch_size: int = 120,
         Encoder mode. 
         Image --> z
         '''
-        test_loader = load_dataset_test(data_path, batch_size)
+        data_set_h5 = H5Dataset(data_path)
+        data_loader = torch.utils.data.DataLoader(data_set_h5, batch_size=batch_size, shuffle=False)
 
         print(f'Mode: Eecode \n Representation of Z will be saved at: {z_dir}')
         if not os.path.isdir(z_dir):
             os.system('mkdir ' + z_dir)
 
-        for batch_idx, (x_l, x_r) in enumerate(test_loader):
-            x_l = x_l.to(device)
-            x_r = x_r.to(device)
-            z_distribution = model.encode(x_l, x_r)
+        save_datas = []
+
+        for batch_idx, (x_l, x_r) in enumerate(data_loader):
+            z_distribution = model.encode(x_l.to(device), x_r.to(device))
             mu = z_distribution[:, :z_dim].clone().detach()
             logvar = z_distribution[:, z_dim:].clone().detach()
             z = model.reparameterize(mu, logvar).detach()
-            save_data = {'z': z}
-            sio.savemat(z_dir + f'save_z{batch_idx}.mat', save_data)
+            save_datas.append(z.detach().numpy())
+        save_z = {'z': np.concatenate(save_datas, axis=0)}
+        sio.savemat(z_dir + f'save_z.mat', save_z)
 
     def decode() -> None:
         '''
@@ -79,18 +83,20 @@ def get_inference(batch_size: int = 120,
         if not os.path.isdir(img_dir):
             os.system('mkdir ' + img_dir)
 
-        file_list = [f for f in os.listdir(z_dir) if f.split('_')[0] == 'save']
-        for batch_idx, filename in enumerate(file_list):
-            z = sio.loadmat(z_dir + f'save_z{batch_idx}.mat')['z']
-            z = torch.tensor(z, device=device)
+        z_value_mat = MatDataset(z_dir + 'save_z.mat')
+        z_value_loader = torch.utils.data.DataLoader(z_value_mat, batch_size=batch_size, shuffle=False)
 
-            # z = model.reparameterize(1, 1)
-            # eps_z = z
+        save_recon_img_l = []
+        save_recon_img_r = []
+        save_recon_img = {}
+        for batch_idx, z in enumerate(z_value_loader):
+            x_recon_l, x_recon_r = model.decode(z.to(device))
+            save_recon_img_l.append(x_recon_l.detach().numpy())
+            save_recon_img_r.append(x_recon_r.detach().numpy())
 
-            # test_save_Z_mat(z,batch_idx,z_dir)
-            x_recon_L, x_recon_R = model.decode(z)
-            # x_recon_L, x_recon_R = model.decode(torch.tensor(mu).to(device))
-            save_image_mat(x_recon_L, x_recon_R, img_dir, batch_idx)
+        save_recon_img = {'recon_L': np.concatenate(save_recon_img_l, axis=0)}
+        save_recon_img = {'recon_R': np.concatenate(save_recon_img_r, axis=0)}
+        sio.savemat(img_dir + '/recon_img.mat', save_recon_img)
 
     if mode.lower() == 'encode':
         encode()
