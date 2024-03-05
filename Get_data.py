@@ -53,7 +53,10 @@ if args.mode.lower() == 'encode':
         xL = xL.to(device)
         xR = xR.to(device)
         z_distribution = model.encode(xL, xR)
-        save_data = {'z_distribution': z_distribution.detach().cpu().numpy()}
+        mu = z_distribution[:, :args.zdim].clone().detach()
+        logvar = z_distribution[:, args.zdim:].clone().detach()
+        z = model.reparameterize(mu, logvar).detach()
+        save_data = {'z': z}
         sio.savemat(args.z_path + f'save_z{batch_idx}.mat', save_data)
 
 
@@ -71,13 +74,8 @@ elif args.mode.lower() == 'decode':
 
     file_list = [f for f in os.listdir(args.z_path) if f.split('_')[0] == 'save']
     for batch_idx, filename in enumerate(file_list):
-        z_dist = sio.loadmat(args.z_path + f'save_z{batch_idx}.mat')
-        z_dist = z_dist['z_distribution']
-        mu = z_dist[:, :args.zdim]
-        logvar = z_dist[:, args.zdim:]
-
-        z = model.reparameterize(torch.tensor(mu).to(device), torch.tensor(logvar).to(device))
-        # z = torch.tensor(mu).to(device)
+        z = sio.loadmat(args.z_path + f'save_z{batch_idx}.mat')['z']
+        z = torch.tensor(z, device=device)
 
         # z = model.reparameterize(1, 1)
         # eps_z = z
@@ -86,10 +84,6 @@ elif args.mode.lower() == 'decode':
         x_recon_L, x_recon_R = model.decode(z)
         # x_recon_L, x_recon_R = model.decode(torch.tensor(mu).to(device))
         save_image_mat(x_recon_L, x_recon_R, args.img_path, batch_idx)
-
-        save_data = {}
-        save_data['z'] = z.detach().cpu().numpy()
-        sio.savemat(args.img_path + f'save_z{batch_idx}.mat', save_data)
 
 else:
     print('[ERROR] Selected mode: ' + args.mode + ' is not valid. \n Choose either [encode, decode]')
