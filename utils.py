@@ -1,9 +1,11 @@
 import os
 import h5py
 import torch
+import csv
 import torch.utils.data as data
 import torch.multiprocessing
 import scipy.io as sio
+import random
 
 
 # torch.multiprocessing.set_start_method('spawn')
@@ -16,7 +18,6 @@ class H5Dataset(data.Dataset):
         self.RightData = self.H5File['RightData']
         self.LeftMask = self.H5File['LeftMask'][:]
         self.RightMask = self.H5File['RightMask'][:]
-        self.H5File.close()
 
     def __getitem__(self, index):
         return (torch.from_numpy(self.LeftData[index, :, :, :]).float(),
@@ -62,3 +63,45 @@ def load_dataset_test(data_path, batch_size):
     test_set = H5Dataset(test_dir)
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, **kwargs)
     return test_loader
+
+
+def load_z_data_paths(data_paths='./split_dataset_paths.csv', mode='mix', subject_num=20):
+    # 读取 CSV 文件
+    train_paths = []
+    val_paths = []
+    test_paths = []
+
+    with open(data_paths, 'r', newline='') as csv_file:
+        reader = csv.DictReader(csv_file)
+        for row in reader:
+            train_paths.append(row['train'])
+            val_paths.append(row['valid'])
+            test_paths.append(row['test'])
+
+    train_z_paths = [os.path.dirname(train_path) + '/save_z.mat' for train_path in train_paths if train_path != '']
+    val_z_paths = [os.path.dirname(val_path) + '/save_z.mat' for val_path in val_paths if val_path != '']
+    test_z_paths = [os.path.dirname(test_path) + '/save_z.mat' for test_path in test_paths if test_path != '']
+
+    # choose subjects without repeatability
+    if subject_num is not None:
+        train_z_paths = random.sample(train_z_paths, subject_num)
+        val_z_paths = random.sample(val_z_paths, subject_num)
+        test_z_paths = random.sample(test_z_paths, subject_num)
+        mix_z_paths = random.sample(train_z_paths, int(subject_num / 2)) + random.sample(test_z_paths,
+                                                                                         int(subject_num / 2))
+    else:
+        # choose all data
+        mix_z_paths = train_z_paths + test_z_paths + val_z_paths
+        pass
+
+    z_paths = []
+    if mode == 'mix':
+        z_paths = mix_z_paths
+    elif mode == 'train':
+        z_paths = train_z_paths
+    elif mode == 'test':
+        z_paths = test_z_paths
+    else:
+        print('[ERROR]: should choose a right mode')
+
+    return z_paths
