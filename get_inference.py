@@ -29,7 +29,7 @@ def get_inference(batch_size: int = 120,
         z_dir: files directory to save z. Only Z files must be in this path, not other files.
         resume_file: checkpoint file name of saving model parameters to load
         img_dir: path to save reconstructed images
-        mode: Mode to get data. Choose one of [encode, decode]
+        mode: Mode to get data. Choose one of [encode, decode, inference]
     retrun:
         encode: z
         decode: reconstruction image
