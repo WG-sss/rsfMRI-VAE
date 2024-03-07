@@ -16,7 +16,6 @@ class H5Dataset(data.Dataset):
         self.RightData = self.H5File['RightData']
         self.LeftMask = self.H5File['LeftMask'][:]
         self.RightMask = self.H5File['RightMask'][:]
-        self.H5File.close()
 
     def __getitem__(self, index):
         return (torch.from_numpy(self.LeftData[index, :, :, :]).float(),
