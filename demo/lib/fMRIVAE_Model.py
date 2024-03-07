@@ -70,7 +70,7 @@ class BetaVAE(nn.Module):
             else:
                 self._modules[block].apply(kaiming_init)
 
-    def _encode(self, xL, xR):
+    def encode(self, xL, xR):
         xL = self.cirpad(xL, 3, self.cirpad_dire) 
         xR = self.cirpad(xR, 3, self.cirpad_dire) 
         x = torch.cat((self.ConvL(xL), self.ConvR(xR)), 1)
@@ -82,7 +82,7 @@ class BetaVAE(nn.Module):
         x = self.fc1(x)
         return x
 
-    def _decode(self, z):
+    def decode(self, z):
         x = self.relu(self.fc2(z).view(-1 , self.ocs[-1], self.topW, self.topW))
 
         #x.size()
@@ -101,18 +101,18 @@ class BetaVAE(nn.Module):
         xrR = self.tConvR(self.cirpad(xR, 3, self.cirpad_dire))
         return xrL, xrR
 
-    def reparametrize(self, mu, logvar):
-        std = logvar.div(2).exp()
+    def reparameterize(self, mu, logvar):
+        std = logvar.true_divide(2).exp()
         eps = Variable(std.data.new(std.size()).normal_())
         return mu + std*eps
 
 
     def forward(self, xL, xR):
-        distributions = self._encode(xL, xR)
+        distributions = self.encode(xL, xR)
         mu = distributions[:, :self.z_dim]
         logvar = distributions[:, self.z_dim:]
-        z = self.reparametrize(mu, logvar)
-        x_recon_L, x_recon_R = self._decode(z)
+        z = self.reparameterize(mu, logvar)
+        x_recon_L, x_recon_R = self.decode(z)
         return x_recon_L, x_recon_R, mu, logvar
 
 def kaiming_init(m):
