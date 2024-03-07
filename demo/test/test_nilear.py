@@ -48,7 +48,7 @@ print(axes[1].name[29697])
 # print('像素尺寸:', zooms[:3])
 # print('仿射矩阵:\n', dteries.affine)
 # dt = zooms[-1]
-# print('TR:', '{:.2f} s'.format(dt))
+# print('TR:', '{:.2f} P'.format(dt))
 
 # # 获取影像对应的矩阵
 # bold_data = dteries.get_fdata()
