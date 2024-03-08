@@ -68,9 +68,9 @@ def get_inference(batch_size: int = 120,
             z_distribution = model.encode(x_l.to(device), x_r.to(device))
             mu = z_distribution[:, :z_dim].clone().detach()
             logvar = z_distribution[:, z_dim:].clone().detach()
-            z_latent_values = model.reparameterize(mu, logvar).detach()
-            z_distributions.append(z_distribution.detach().numpy())
-            z_latent_values.append(z_latent_values.detach().numpy())
+            z_latent_value = model.reparameterize(mu, logvar).detach()
+            z_distributions.append(z_distribution.detach().cpu().numpy())
+            z_latent_values.append(z_latent_value.detach().cpu().numpy())
         z_distributions = np.concatenate(z_distributions, axis=0)
         z_latent_values = np.concatenate(z_latent_values, axis=0)
         saved_z['z_distributions'] = z_distributions  # dimension: N * (256 + 256), mu + logvar
@@ -97,8 +97,8 @@ def get_inference(batch_size: int = 120,
         saved_recon_img = {}
         for batch_idx, z_latent_value in enumerate(z_latent_value_loader):
             x_recon_l, x_recon_r = model.decode(z_latent_value.to(device))
-            saved_recon_img_l.append(x_recon_l.detach().numpy())
-            saved_recon_img_r.append(x_recon_r.detach().numpy())
+            saved_recon_img_l.append(x_recon_l.detach().cpu().numpy())
+            saved_recon_img_r.append(x_recon_r.detach().cpu().numpy())
 
         saved_recon_img['recon_L'] = np.concatenate(saved_recon_img_l, axis=0)
         saved_recon_img['recon_R'] = np.concatenate(saved_recon_img_r, axis=0)
