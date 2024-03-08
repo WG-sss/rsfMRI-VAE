@@ -30,7 +30,7 @@ class H5Dataset(data.Dataset):
 class MatDataset(data.Dataset):
     def __init__(self, mat_data_path):
         super().__init__()
-        self.z = sio.loadmat(mat_data_path)['z']
+        self.z = sio.loadmat(mat_data_path)['z_latent_variables']
 
     def __getitem__(self, index):
         return torch.from_numpy(self.z[index, :]).float()

@@ -18,11 +18,11 @@ with open(data_paths, 'r', newline='') as csvfile:
 val_paths = [val_dir for val_dir in val_paths if val_dir != '']
 test_paths = [test_dir for test_dir in test_paths if test_dir != '']
 
-checkpoint_path = '../checkpoint/checkpoint40-9.pth.tar'
+checkpoint_file = './Checkpoint/checkpoint100-9.pth.tar'
 
 h5_data_paths = train_paths[:20] + val_paths[:20] + test_paths[:20]
 print(h5_data_paths)
 for h5_path in h5_data_paths[:20]:
     parent_dir = os.path.dirname(h5_path) + '/'
-    get_inference(data_path=h5_path, z_dir=parent_dir, resume_file=checkpoint_path,
+    get_inference(data_path=h5_path, z_dir=parent_dir, resume_file=checkpoint_file,
                   img_dir=parent_dir, mode='encode')

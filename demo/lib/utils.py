@@ -25,16 +25,16 @@ class H5Dataset(data.Dataset):
         return self.LeftData.shape[0]
 
 
-class MatDataset(data.Dataset):
+class MatLatentSet(data.Dataset):
     def __init__(self, mat_data_path):
         super().__init__()
-        self.z = sio.loadmat(mat_data_path)['z']
+        self.z_latent_values = sio.loadmat(mat_data_path)['z_latent_values']
 
     def __getitem__(self, index):
-        return torch.from_numpy(self.z[index, :]).float()
+        return torch.from_numpy(self.z_latent_values[index, :]).float()
 
     def __len__(self):
-        return self.z.shape[0]
+        return self.z_latent_values.shape[0]
 
 
 def save_image_mat(img_l, img_r, result_path, idx):

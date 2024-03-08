@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(description='VAE for fMRI data')
 parser.add_argument('--batch-size', type=int, default=128, metavar='N',
                     help='input batch size for training (default: 128)')
 parser.add_argument('--epochs', type=int, default=30, metavar='N',
-                    help='number of epochs to train (default: 100)')
+                    help='number of epochs to train (default: 30)')
 parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
 parser.add_argument('--log-interval', type=int, default=5, metavar='N',
