@@ -23,5 +23,6 @@ for i = 1:length(subdirectories)
 end
 
 for k = 1:length(nii_paths)
-    preprocess_fMRI(nii_paths{k})
+    % preprocess_fMRI(nii_paths{k})
+    geometric_reformatting(nii_paths{k})
 end

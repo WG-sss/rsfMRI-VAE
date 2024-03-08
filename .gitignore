@@ -6,3 +6,6 @@
 *.tar
 *.h5
 *.asv
+.idea/
+*.txt
+*.png
