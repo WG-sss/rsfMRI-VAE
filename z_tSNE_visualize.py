@@ -16,10 +16,11 @@ parser.add_argument('--saved_z_file', type=str, default='save_z.mat', metavar='N
 parser.add_argument('--n_subjects', type=int, default=20, metavar='N')
 parser.add_argument('--n_time_points', type=int, default=1200, metavar='N')
 parser.add_argument('--n_components', type=int, default=2, metavar='N')
+parser.add_argument('--z_mode', type=str, default='z_value', choices=['z_value', 'z_distribution'])
 
 args = parser.parse_args()
 mode = args.mode
-n_subjects = args.n_subject
+n_subjects = args.n_subjects
 n_time_points = args.n_time_points
 n_components = args.n_components
 
@@ -56,22 +57,23 @@ elif mode == 'test':
 else:
     print('[ERROR]: should choose a right mode')
 
-z_samples = []
+z_value_samples = []
 subject_ids = []
+z_loaded_values = 'z_latent_values' if args.z_mode == 'z_value' else 'z_distributions'
 for i, z_path in enumerate(z_paths):
-    z = sio.loadmat(z_path)['z']
-    sample_idx = [i for i in range(n_time_points)]
-    z_sample = z[sample_idx, :]
-    z_samples.append(z_sample)
+    z_values = sio.loadmat(z_path)[z_loaded_values]
+    time_idx = [i for i in range(n_time_points)]
+    z_value_sample = z_values[time_idx, :]
+    z_value_samples.append(z_value_sample)
     subject_ids.append([i + 1] * n_time_points)
-z_samples = np.vstack(z_samples)
+z_value_samples = np.vstack(z_value_samples)
 subject_ids = np.concatenate(subject_ids, axis=0)
 
 # 创建t-SNE对象
 tsne = TSNE(n_components=2)
 
 # 对数据进行降维
-z_tsne = tsne.fit_transform(z_samples)
+z_tsne = tsne.fit_transform(z_value_samples)
 
 # 可视化数据
 fig, (ax1, ax2) = plt.subplots(1, 2, width_ratios=[3, 9])
@@ -98,7 +100,7 @@ for i in range(1, n_subjects + 1):
     )
     y_lower = y_upper + 5 
 
-ax1.set_title(f"The silhouette index. avg={silhouette_avg}")
+ax1.set_title(f"The silhouette index. avg={silhouette_avg:.2f}")
 ax1.set_yticks([10 + 15 * i for i in range(int(n_subjects))])
 ax1.set_yticklabels([i + 1 for i in range(int(n_subjects))])
 ax1.set_xlabel("Silhouette values")
@@ -117,7 +119,7 @@ sm.set_array([])
 plt.colorbar(sm, ax=ax2, shrink=0.5, ticks=[1, n_subjects], label='subject id')
 
 n = 0
-while os.paht.exists(f'./silhouette_{mode}_papaer_nc{args.n_components}_sub{n_subjects}_{n}.png'):
+while os.path.exists(f'./silhouette_{mode}_papaer_nc{args.n_components}_sub{n_subjects}_{n}.png'):
     n += 1
-plt.savefig(f'./silhouette_{mode}_papaer_nc{args.n_components}_sub{n_subjects}_{n}.png')
+plt.savefig(f'./silhouette_{mode}_papaer_nc{args.n_components}_sub{n_subjects}_{n}.svg')
 

@@ -20,7 +20,7 @@ def get_inference(batch_size: int = 120,
              img_dir: str = './demo/data/100408_REST1LR/recon_img/',
              mode: Literal['decode', 'encode', 'inference'] = 'encode'):
     """
-    description: 'VAE for fMRI generation')
+    description: 'VAE for fMRI generation'
     para:
         batch_size: input batch size for training (default: 120)
         seed: random seed (default: 1)
@@ -30,7 +30,7 @@ def get_inference(batch_size: int = 120,
         resume_file: checkpoint file name of saving model parameters to load
         img_dir: path to save reconstructed images
         mode: Mode to get data. Choose one of [encode, decode, inference]
-    retrun:
+    return:
         encode: z_latent_variables
         decode: reconstruction image
         inference: encode and decode
