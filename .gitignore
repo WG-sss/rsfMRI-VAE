@@ -5,3 +5,8 @@
 *.nii
 *.tar
 *.h5
+*.asv
+.idea/
+*.txt
+*.png
+samples_for_scaling
