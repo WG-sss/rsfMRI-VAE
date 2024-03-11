@@ -119,7 +119,7 @@ sm.set_array([])
 plt.colorbar(sm, ax=ax2, shrink=0.5, ticks=[1, n_subjects], label='subject id')
 
 n = 0
-while os.path.exists(f'./silhouette_{mode}_papaer_nc{args.n_components}_sub{n_subjects}_{n}.png'):
+while os.path.exists(f'./silhouette_{mode}_papaer_nc{args.n_components}_sub{n_subjects}_{n}.svg'):
     n += 1
 plt.savefig(f'./silhouette_{mode}_papaer_nc{args.n_components}_sub{n_subjects}_{n}.svg')
 
