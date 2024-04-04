@@ -3,11 +3,16 @@ function backward_reformatting(recon_dir, inverse_transformation_path, cii_templ
     % backward projection from the VAE reconstruction to the cortex
     
     %% Configuration
-    batchsize = 120;
+    % batchsize = 120;
+    batchsize = 9;
     addpath('./CIFTI_read_save');
-    % recon_path = './result/recon/';
-    % inverse_transformation_path = './data/100408_REST1LR/';
-    % cii_template_filepath = './data/100408_rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean_preprocessed.dtseries.nii';
+    recon_path = './result/recon/';
+    if isempty(inverse_transformation_path)
+        inverse_transformation_path = './data/100408_REST1LR/';
+    end
+    if isempty(cii_template_filepath)
+        cii_template_filepath = './data/100408_rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean_preprocessed.dtseries.nii';
+    end
     % cii_output_filepath = './data/100408_rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean_preprocessed_2';
     
     %% load the inverse transformation matrix
