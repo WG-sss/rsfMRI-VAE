@@ -9,4 +9,11 @@
 .idea/
 *.txt
 *.png
+*.mat
+*.svg
 samples_for_scaling
+data/100408_REST1LR
+data/100408_REST1LR_0
+data
+demo/test/nilearn_cache/joblib/nilearn
+demo/test

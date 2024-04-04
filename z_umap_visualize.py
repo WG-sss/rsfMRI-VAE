@@ -12,12 +12,18 @@ import sys
 import argparse
 import umap
 import umap.plot
-from typing import Literal
+from typing import Literal, Optional
 
 
-def reduce_2D_visualize(data_path: str=None, method: Literal['tsne', 'umap']='umap', save: bool=False) -> None:
+def reduce_2d_visualize(data_path: Optional[str]=None, mode: Literal['test', 'train']=None,
+                        method: Literal['tsne', 'umap']='umap',
+                        z_value: Literal['latent_value', 'distribution']=None,
+                        save: bool=False) -> None:
     if data_path is None:
-        print('[ERROR]: data_paht should be specified')
+        print('[ERROR]: data_path should be specified')
+        sys.exit(1)
+    if z_value is None:
+        print('[ERROR]: z_value should be specified')
         sys.exit(1)
 
     z_value_samples = sio.loadmat(data_path)['sapmle_z_data']
@@ -63,7 +69,7 @@ def reduce_2D_visualize(data_path: str=None, method: Literal['tsne', 'umap']='um
     ax1.set_ylabel("Subject IDs")
 
     ax2.scatter(z_embedding[:, 0], z_embedding[:, 1],
-                c=subject_ids, cmap='tab20b', s=0.2)
+                c=subject_ids, cmap='tab20b', s=0.5)
     ax2.set_title('UMAP Visualization of z Representation')
     ax2.set_xlabel('Axis 1')
     ax2.set_ylabel('Axis 2')
@@ -78,9 +84,9 @@ def reduce_2D_visualize(data_path: str=None, method: Literal['tsne', 'umap']='um
 
     if save:
         n = 0
-        while os.path.exists(f'./image/2D_map_{mode}_{method}_beta9_{n}.svg'):
+        while os.path.exists(f'./image/2D_map_{mode}_{z_value}_{method}_beta9_{n}.svg'):
             n += 1
-        plt.savefig(f'./image/2D_map_{mode}_{method}_beta9_{n}.svg')
+        plt.savefig(f'./image/2D_map_{mode}_{z_value}_{method}_beta9_{n}.svg')
     else:
         pass
 #
@@ -89,5 +95,24 @@ if __name__ == "__main__":
                  './samples_for_scaling/train_z_distributions.mat',
                  './samples_for_scaling/test_z_latent_values.mat',
                  './samples_for_scaling/train_z_latent_values.mat',]
-    for data_path in data_paths[:2]:
-        reduce_2D_visualize(data_path, method='umap', save=True)
+    # for data_path in data_paths:
+    #     mode = None
+    #     z_value = None
+    #     if 'test' in data_path:
+    #         mode = 'test'
+    #     elif 'train' in data_path:
+    #         mode = 'train'
+    #     else:
+    #         print('[ERROR]: mode not defined')
+    #         sys.exit(1)
+    #     if 'distribution' in data_path:
+    #         z_value = 'distribution'
+    #     elif 'values' in data_path:
+    #         z_value = 'latent_value'
+    #     else:
+    #         print('[ERROR]: z_value mode not defined')
+    #         sys.exit(1)
+    #
+    #     for method in ['umap', 'tsne']:
+    #         reduce_2d_visualize(data_path, mode=mode, method=method, z_value=z_value, save=True)
+    reduce_2d_visualize(data_paths[1], mode='train', method='tsne', z_value='distribution', save=True)
