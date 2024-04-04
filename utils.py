@@ -6,6 +6,8 @@ import torch.utils.data as data
 import torch.multiprocessing
 import scipy.io as sio
 import random
+from functools import wraps
+import matplotlib.pyplot as plt
 
 
 # torch.multiprocessing.set_start_method('spawn')
@@ -105,3 +107,25 @@ def load_z_data_paths(data_paths='./split_dataset_paths.csv', mode='mix', subjec
         print('[ERROR]: should choose a right mode')
 
     return z_paths
+
+def save_fig(fig_name: str=''):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            result = func(*args, **kwargs)
+            plt.savefig(f'{fig_name}')
+            return result
+        return wrapper
+    return decorator
+
+def timer():
+    import time
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            start = time.time()
+            result = func(*args, **kwargs)
+            print(f"func.__name__ has runed {time.time() - start:.4f}s")
+            return result
+        return wrapper
+    return decorator

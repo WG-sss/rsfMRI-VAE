@@ -4,6 +4,8 @@ import torch
 import torch.utils.data as data
 import torch.multiprocessing
 import scipy.io as sio
+from functools import wraps
+import matplotlib.pyplot as plt
 
 
 # torch.multiprocessing.set_start_method('spawn')
@@ -61,3 +63,14 @@ def load_dataset_test(data_path, batch_size):
     test_set = H5Dataset(test_dir)
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, **kwargs)
     return test_loader
+
+def save_fig(fig_name: str=''):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            result = func(*args, **kwargs)
+            plt.savefig(f'{fig_name}')
+            return result
+        return wrapper
+    return decorator
+
