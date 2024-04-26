@@ -101,7 +101,7 @@ class BetaVAE(nn.Module):
         xrR = self.tConvR(self.cirpad(xR, 3, self.cirpad_dire))
         return xrL, xrR
 
-    def reparameterize(self, mu, logvar):
+    def reparametrize(self, mu, logvar):
         std = logvar.true_divide(2).exp()
         eps = Variable(std.data.new(std.size()).normal_())
         return mu + std*eps
@@ -111,7 +111,7 @@ class BetaVAE(nn.Module):
         distributions = self.encode(xL, xR)
         mu = distributions[:, :self.z_dim]
         logvar = distributions[:, self.z_dim:]
-        z = self.reparameterize(mu, logvar)
+        z = self.reparametrize(mu, logvar)
         x_recon_L, x_recon_R = self.decode(z)
         return x_recon_L, x_recon_R, mu, logvar
 
