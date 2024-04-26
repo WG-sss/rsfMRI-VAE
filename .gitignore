@@ -17,3 +17,5 @@ data/100408_REST1LR_0
 data
 demo/test/nilearn_cache/joblib/nilearn
 demo/test
+*.pdf
+
