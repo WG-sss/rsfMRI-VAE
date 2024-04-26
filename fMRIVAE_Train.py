@@ -48,13 +48,9 @@ parser.add_argument('--mother-path', default='./', type=str,
 
 def save_image_mat(img_r, img_l, result_path):
     save_data = {}
-
     save_data['recon_L'] = img_l.detach().cpu().numpy()
-
     save_data['recon_R'] = img_r.detach().cpu().numpy()
-
     sio.savemat(result_path + 'save_img_mat.mat', save_data)
-
     print('image saved as mat')
 
 
@@ -125,15 +121,14 @@ scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
 # resume
 if args.resume:
     if os.path.isfile(args.resume):
-        print("=> loading checkpoint '{}'".format(args.resume))
+        print(f"=> loading checkpoint '{args.resume}'")
         checkpoint = torch.load(args.resume)
         start_epoch = checkpoint['epoch']
         model.load_state_dict(checkpoint['state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer'])
-        print("=> loaded checkpoint '{}' (epoch {})"
-              .format(args.resume, checkpoint['epoch']))
+        print(f"=> loaded checkpoint '{args.resume}' (epoch { checkpoint['epoch']})")
     else:
-        print("=> no checkpoint found at '{}'".format(args.resume))
+        print(f"=> no checkpoint found at '{args.resume}'")
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -153,14 +148,11 @@ def loss_function(xL, xR, x_recon_L, x_recon_R, mu, logvar, beta, left_mask, rig
     # log[P(X|z)]-C = - \frac{1}{2}*2*192*192//\sigma^2 * F.mse_loss
     # Therefore, vae_beta = \frac{1}{36864//\sigma^2}
     if left_mask is not None:
-        MSE_L = F.mse_loss(x_recon_L * left_mask.detach(), xL * left_mask.detach(), size_average=True)
-        MSE_R = F.mse_loss(x_recon_R * right_mask.detach(), xR * right_mask.detach(), size_average=True)
+        MSE_L = F.mse_loss(x_recon_L * left_mask.detach(), xL * left_mask.detach(), reduction='mean')
+        MSE_R = F.mse_loss(x_recon_R * right_mask.detach(), xR * right_mask.detach(), reduction='mean')
     else:  # left and right masks are None
-        MSE_L = F.mse_loss(x_recon_L, xL, size_average=True)
-        MSE_R = F.mse_loss(x_recon_R, xR, size_average=True)
-
-    # MSE_L = F.mse_loss(x_recon_L, xL, size_average=False).div(L_batch_size)
-    # MSE_R = F.mse_loss(x_recon_R, xR, size_average=False).div(R_batch_size)
+        MSE_L = F.mse_loss(x_recon_L, xL, reduction='mean')
+        MSE_R = F.mse_loss(x_recon_R, xR, reduction='mean')
 
     # KLD is averaged across batch-samples
     KLD = -0.5 * (1 + logvar - mu.pow(2) - logvar.exp()).sum(1).mean()
@@ -171,19 +163,12 @@ def loss_function(xL, xR, x_recon_L, x_recon_R, mu, logvar, beta, left_mask, rig
 # >>>>>>>>>>>>>>>>>>>>>>>> train and test func >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def train_save_image_mat(img_r, img_l, recon_r, recon_l, loss, recon_loss, N_Epoch, result_path):
     save_data = {}
-
     save_data['recon_L'] = recon_l.detach().cpu().numpy()
-
     save_data['recon_R'] = recon_r.detach().cpu().numpy()
-
     save_data['img_R'] = img_r.detach().cpu().numpy()
-
     save_data['img_L'] = img_l.detach().cpu().numpy()
-
     save_data['Loss'] = loss
-
     save_data['Recon_Loss'] = recon_loss
-
     sio.savemat(result_path + '/train_save_img_mat' + str(N_Epoch) + '.mat', save_data)
 
     print('train image saved as mat')
@@ -191,19 +176,12 @@ def train_save_image_mat(img_r, img_l, recon_r, recon_l, loss, recon_loss, N_Epo
 
 def test_save_image_mat(img_r, img_l, recon_r, recon_l, loss, recon_loss, N_Epoch, result_path):
     save_data = {}
-
     save_data['recon_L'] = recon_l.detach().cpu().numpy()
-
     save_data['recon_R'] = recon_r.detach().cpu().numpy()
-
     save_data['img_R'] = img_r.detach().cpu().numpy()
-
     save_data['img_L'] = img_l.detach().cpu().numpy()
-
     save_data['Loss'] = loss
-
     save_data['Recon_Loss'] = recon_loss
-
     sio.savemat(result_path + '/test_save_img_mat' + str(N_Epoch) + '.mat', save_data)
 
     print('test image saved as mat')
@@ -213,20 +191,21 @@ def _train(epoch, train_loader, left_mask, right_mask):
     model.train()
     train_loss = 0
     recon_loss = 0
+    # KL_div_loss = 0
+    # loss_trace = []
 
     for batch_idx, (xL, xR) in enumerate(train_loader):
         xL = xL.to(device)
         xR = xR.to(device)
         optimizer.zero_grad()
         x_recon_L, x_recon_R, mu, logvar = model(xL, xR)
-
         Recon_Error = loss_function(xL, xR, x_recon_L, x_recon_R, mu, logvar, 0, left_mask, right_mask)
-
         recon_loss += Recon_Error.item()
-
+        
         loss = loss_function(xL, xR, x_recon_L, x_recon_R, mu, logvar, args.vae_beta, left_mask, right_mask)
         loss.backward()
         train_loss += loss.item()
+
         optimizer.step()
 
         if batch_idx % args.log_interval == 0:
@@ -241,10 +220,16 @@ def _train(epoch, train_loader, left_mask, right_mask):
         # train_save_image_mat(xR, xL,x_recon_R,x_recon_L,loss.item()/len(xL),Recon_Error.item()/len(xL),epoch,result_path)
 
     stat_file = open(log_name, 'a+')
-    stat_file.write('Epoch:{} Average training loss: {:.8f} Average reconstruction loss: {:.8f}'.format(epoch,
-                                                                                                        train_loss / batch_idx,
-                                                                                                        recon_loss / batch_idx))
-    print('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / batch_idx))
+    stat_file.write(f'Epoch:{epoch} Average training loss: '
+                f'{train_loss / batch_idx:.8f} '
+                f'Average reconstruction loss: '
+                f'{recon_loss / batch_idx:.8f}')
+
+    print(f'====> Epoch: {epoch} Average loss: {train_loss / batch_idx:.4f}')
+
+    # loss_trace.append(recon_loss)
+    # loss_trace.append(KL_div_loss)
+    return train_loss / batch_idx, recon_loss / batch_idx
 
 
 def _test(epoch, test_loader, left_mask, right_mask):
@@ -272,12 +257,14 @@ def _test(epoch, test_loader, left_mask, right_mask):
 
     test_loss /= i
     stat_file = open(log_name, 'a+')
-    stat_file.write('Epoch:{} Average validation loss: {:.8f}'.format(epoch, test_loss))
-    print('====> Test set loss: {:.4f}'.format(test_loss))
+    stat_file.write('Epoch:{epoch} Average validation loss: { test_loss:.8f}')
+    print(f'====> Test set loss: {test_loss:.4f}')
 
 def train(epoch, train_dirs):
 # >>>>>>>>>>>>>>>>>>>>>>>> dataloader >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     kwargs = {'num_workers': 1, 'pin_memory': True} if torch.cuda.is_available() else {}
+    train_loss_trace = []
+    recon_loss_trace = []
     for train_dir in train_dirs[:10]:
 
         train_set = H5Dataset(train_dir)
@@ -293,9 +280,12 @@ def train(epoch, train_dirs):
             left_mask = None
             right_mask = None
 
-        _train(epoch, train_loader, left_mask, right_mask)
+        train_loss, recon_loss = _train(epoch, train_loader, left_mask, right_mask)
+        train_loss_trace.append(train_loss)
+        recon_loss_trace.append(recon_loss)
 
     print('train one time over all train subjects')
+    return  sum(train_loss_trace) / len(train_loss_trace), sum(recon_loss_trace) / len(recon_loss_trace)
 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 def test(epoch, test_dirs):
@@ -328,13 +318,32 @@ def save_checkpoint(state, filename):
 if __name__ == "__main__":
     train_dirs, val_dirs, test_dirs = load_data_paths()
     test(0, val_dirs)
+    train_loss_record, recon_loss_record = [], []
+    loss_record = {}
     for epoch in range(start_epoch + 1, args.epochs):
-        train(epoch, train_dirs)
+        train_loss, recon_loss = train(epoch, train_dirs)
+        train_loss_record.append(train_loss)
+        recon_loss_record.append(recon_loss)
         test(epoch, val_dirs)
         if epoch % 10 == 0:
             save_checkpoint({
                 'epoch': epoch,
                 'state_dict': model.state_dict(),
                 'optimizer': optimizer.state_dict()
-            }, checkpoint_path + '/checkpoint' + str(epoch) + args.vae_beta + '.pth.tar')
+            }, checkpoint_path + '/checkpoint' + str(epoch) + str(args.vae_beta) + '.pth.tar')
         scheduler.step()
+
+    loss_record['train_loss_record'] = train_loss_record
+    loss_record['recon_loss_record'] = recon_loss_record
+    sio.savemat('loss_record.mat', loss_record)
+
+    import matplotlib.pyplot as plt
+    plt.plot(range(1, args.epochs + 1), train_loss_record, label='train loss')
+    plt.plot(range(1, args.epochs + 1), recon_loss_record, label='recon loss')
+    plt.legend()
+    plt.xlabel('epoch')
+    plt.ylabel('loss')
+    plt.savefig('loss.pdf')
+
+
+
