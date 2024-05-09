@@ -3,15 +3,29 @@ import matplotlib.pyplot as plt
 import numpy as np
 from nilearn import plotting
 
+origin_data = nib.load('../data/test_origin_with_NaN/100408_rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean_preprocessed_withNan.dtseries.nii')
+recon_data = nib.load('../data/test_origin_with_NaN/100408_rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean_reconstruction.dtseries.nii')
+
+origin_dtseries = origin_data.get_fdata()
+recon_dtseries = recon_data.get_fdata()
+print(origin_dtseries.shape)
+
+origin_point = origin_dtseries[:100, 8662]
+recon_point = recon_dtseries[:100, 8662]
+
+plt.plot(origin_point, c='black')
+plt.plot(recon_point, c='red')
+plt.show()
+
 # 读取 dtseries.nii 文件
-img = nib.load('../data/100408_rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean_reconstruction_test.dtseries.nii')
-axes = [img.header.get_axis(i) for i in range(img.ndim)]
-print(len(axes[1].name)) # 96854
-
-for i in range(29696):
-    print(axes[1].name[i])
-
-print(axes[1].name[29697])
+# img = nib.load('../data/100408_rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean_reconstruction_test.dtseries.nii')
+# axes = [img.header.get_axis(i) for i in range(img.ndim)]
+# print(len(axes[1].name)) # 96854
+#
+# for i in range(29696):
+#     print(axes[1].name[i])
+#
+# print(axes[1].name[29697])
 # for i in range(len(axes[1])):
 #     # if axes[1][i][2] == 'CIFTI_STRUCTURE_CORTEX_RIGHT':
 #         print(axes[1][i])

@@ -45,7 +45,7 @@ if not os.path.isdir(args.z_path):
 for batch_idx, (xL, xR) in enumerate(test_loader):
     xL = xL.to(device)
     xR = xR.to(device)
-    z_distribution = model._encode(xL, xR)
+    z_distribution = model.encode(xL, xR)
 
     save_data = {}
     save_data['z_distribution'] = z_distribution.detach().cpu().numpy()

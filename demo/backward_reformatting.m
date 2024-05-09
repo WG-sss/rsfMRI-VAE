@@ -3,10 +3,12 @@ function backward_reformatting(recon_dir, inverse_transformation_path, cii_templ
     % backward projection from the VAE reconstruction to the cortex
     
     %% Configuration
-    % batchsize = 120;
-    batchsize = 9;
+    batchsize = 1200;
+    % batchsize = 9;
     addpath('./CIFTI_read_save');
-    recon_path = './result/recon/';
+    if isempty(recon_dir)
+        recon_dir = './result/recon/';
+    end
     if isempty(inverse_transformation_path)
         inverse_transformation_path = './data/100408_REST1LR/';
     end
@@ -25,13 +27,13 @@ function backward_reformatting(recon_dir, inverse_transformation_path, cii_templ
     
     %% backward projection
     recon_dtseries = zeros(59412, 1200);
-    load([recon_path 'recon_img.mat'], 'recon_L', 'recon_R');
+    load([recon_dir 'recon_img_z.mat'], 'recon_L', 'recon_R');
     % (120, 1, 192, 192) --permute & reshape & tranpose-->
     % (29696, 36864) * (36864,1200) -> (29696, 1200)
     corticalrecon_L = Left_inverse_transformation * double(reshape(permute(recon_L,[1,2,4,3]),batchsize, [])');
     % (29716, 36864) * (36864,1200) -> (29716, 1200)
     corticalrecon_R = Right_inverse_transformation * double(reshape(permute(recon_R,[1,2,4,3]),batchsize, [])');
-    recon_dtseries(:, (idx-1)*batchsize+1:idx*batchsize) = [corticalrecon_L; corticalrecon_R];
+    recon_dtseries(:, 1:batchsize) = [corticalrecon_L; corticalrecon_R];
     
     %% save the reconstruction back into cifti file
     % read in original data with fieldtrip toolbox

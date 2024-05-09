@@ -16,6 +16,7 @@ def get_inference(batch_size: int = 120,
              z_dim: int = 256,
              data_path: str = './demo/data/100408_REST1LR/val_fMRI_data.h5',
              z_dir: str = './demo/data/100408_REST1LR/z_distribution/',
+             z_saved_name = 'saved_z.mat',
              resume_file: str = './demo/checkpoint/checkpoint40-9.pth.tar',
              img_dir: str = './demo/data/100408_REST1LR/recon_img/',
              mode: Literal['decode', 'encode', 'inference'] = 'encode'):
@@ -75,7 +76,7 @@ def get_inference(batch_size: int = 120,
         z_latent_values = np.concatenate(z_latent_values, axis=0)
         saved_z['z_distributions'] = z_distributions  # dimension: N * (256 + 256), mu + logvar
         saved_z['z_latent_values'] = z_latent_values  # dimension: N * 256
-        sio.savemat(z_dir + f'saved_z_beta9.mat', saved_z)
+        sio.savemat(z_dir + f'{z_saved_name}', saved_z)
 
     def decode() -> None:
         """
@@ -89,7 +90,7 @@ def get_inference(batch_size: int = 120,
         if not os.path.isdir(img_dir):
             os.system('mkdir ' + img_dir)
 
-        saved_z_mat = MatLatentSet(z_dir + 'saved_z_beta9.mat')
+        saved_z_mat = MatLatentSet(z_dir + 'saved_z.mat')
         z_latent_value_loader = torch.utils.data.DataLoader(saved_z_mat, batch_size=batch_size, shuffle=False)
 
         saved_recon_img_l = []

@@ -19,3 +19,4 @@ demo/test/nilearn_cache/joblib/nilearn
 demo/test
 *.pdf
 
+data_download.py
